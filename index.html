@@ -100,7 +100,7 @@
 
     <h1>Learning Targets Overview</h1>
 
-    <input type="text" id="searchInput" placeholder="Search by label, description, category, or topic...">
+    <input type="text" id="searchInput" placeholder="Search by label, description, subject, topic, or category...">
 
     <table>
         <thead>
@@ -109,10 +109,11 @@
                 <th>Label</th>
                 <th>Description</th>
                 <th>Image</th>
-                <th>Category</th>
-                <th>Correct Cat.</th>
+                <th>Subject</th>
                 <th>Topic</th>
                 <th>Correct Topic.</th>
+                <th>Category</th>
+                <th>Correct Cat.</th>
             </tr>
         </thead>
         <tbody id="target-table-body">
@@ -137,7 +138,7 @@
             if (targets.length === 0) {
                 const row = tableBody.insertRow();
                 const cell = row.insertCell();
-                cell.colSpan = 8; // Updated colspan to 8
+                cell.colSpan = 9; // Updated colspan to 9
                 cell.textContent = 'No targets found.';
                 cell.style.textAlign = 'center';
                 return;
@@ -165,36 +166,39 @@
                 image.alt = `Image for ${target.Label}`;
                 image.onerror = () => { image.style.display = 'none'; cellImage.textContent = 'No Image'; };
                 
-                // Add click event to open the modal
                 image.onclick = function() {
                     modal.style.display = "block";
                     modalImg.src = this.src;
                 }
                 cellImage.appendChild(image);
 
-                // 5. Category
-                const cellCategory = row.insertCell();
-                cellCategory.textContent = Array.isArray(target.Category) ? target.Category.join(', ') : target.Category;
+                // 5. Subject (NEW)
+                const cellSubject = row.insertCell();
+                cellSubject.textContent = Array.isArray(target.Subject) ? target.Subject.join(', ') : (target.Subject || '');
                 
-                // 6. "Correct Cat." Checkbox
-                const cellCorrectCat = row.insertCell();
-                const checkboxCat = document.createElement('input');
-                checkboxCat.type = 'checkbox';
-                checkboxCat.checked = true; // Default to true
-                cellCorrectCat.style.textAlign = 'center'; // Center the checkbox
-                cellCorrectCat.appendChild(checkboxCat);
-
-                // 7. Topic
+                // 6. Topic
                 const cellTopic = row.insertCell();
-                cellTopic.textContent = Array.isArray(target.Topic) ? target.Topic.join(', ') : target.Topic;
+                cellTopic.textContent = Array.isArray(target.Topic) ? target.Topic.join(', ') : (target.Topic || '');
 
-                // 8. "Correct Topic." Checkbox
+                // 7. "Correct Topic." Checkbox
                 const cellCorrectTopic = row.insertCell();
                 const checkboxTopic = document.createElement('input');
                 checkboxTopic.type = 'checkbox';
-                checkboxTopic.checked = true; // Default to true
-                cellCorrectTopic.style.textAlign = 'center'; // Center the checkbox
+                checkboxTopic.checked = true;
+                cellCorrectTopic.style.textAlign = 'center';
                 cellCorrectTopic.appendChild(checkboxTopic);
+                
+                // 8. Category
+                const cellCategory = row.insertCell();
+                cellCategory.textContent = Array.isArray(target.Category) ? target.Category.join(', ') : (target.Category || '');
+
+                // 9. "Correct Cat." Checkbox
+                const cellCorrectCat = row.insertCell();
+                const checkboxCat = document.createElement('input');
+                checkboxCat.type = 'checkbox';
+                checkboxCat.checked = true;
+                cellCorrectCat.style.textAlign = 'center';
+                cellCorrectCat.appendChild(checkboxCat);
             });
         }
         
@@ -203,15 +207,18 @@
             const searchTerm = searchInput.value.toLowerCase();
 
             const filteredTargets = allTargets.filter(target => {
-                const label = target.Label.toLowerCase();
-                const description = target.Description.toLowerCase();
-                const category = Array.isArray(target.Category) ? target.Category.join(', ').toLowerCase() : '';
-                const topic = Array.isArray(target.Topic) ? target.Topic.join(', ').toLowerCase() : '';
+                // Ensure values are strings and lowercase before searching
+                const label = (target.Label || '').toLowerCase();
+                const description = (target.Description || '').toLowerCase();
+                const subject = (Array.isArray(target.Subject) ? target.Subject.join(', ') : (target.Subject || '')).toLowerCase();
+                const topic = (Array.isArray(target.Topic) ? target.Topic.join(', ') : (target.Topic || '')).toLowerCase();
+                const category = (Array.isArray(target.Category) ? target.Category.join(', ') : (target.Category || '')).toLowerCase();
 
                 return label.includes(searchTerm) ||
                        description.includes(searchTerm) ||
-                       category.includes(searchTerm) ||
-                       topic.includes(searchTerm);
+                       subject.includes(searchTerm) || // Added to search
+                       topic.includes(searchTerm) ||
+                       category.includes(searchTerm);
             });
             
             displayTargets(filteredTargets);
@@ -232,23 +239,20 @@
                 .catch(error => {
                     console.error('Error fetching or parsing JSON:', error);
                     const tableBody = document.getElementById('target-table-body');
-                    // Updated colspan to 8
-                    tableBody.innerHTML = `<tr><td colspan="8" style="color: red; text-align: center;">Failed to load data. Please check if 'labeled_targets.json' exists and is in the same directory.</td></tr>`;
+                    // Updated colspan to 9
+                    tableBody.innerHTML = `<tr><td colspan="9" style="color: red; text-align: center;">Failed to load data. Please check if 'labeled_targets.json' exists and is in the same directory.</td></tr>`;
                 });
             
             const searchInput = document.getElementById('searchInput');
             searchInput.addEventListener('input', filterTargets);
 
-            // --- Modal close logic ---
             const modal = document.getElementById('imageModal');
             const closeButton = document.querySelector('.close-button');
             
-            // When the user clicks on <span> (x), close the modal
             closeButton.onclick = function() {
                 modal.style.display = "none";
             }
             
-            // When the user clicks anywhere outside of the modal content, close it
             window.onclick = function(event) {
                 if (event.target == modal) {
                     modal.style.display = "none";

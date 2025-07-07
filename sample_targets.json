@@ -1,0 +1,59 @@
+{
+    "data": {
+        "search_results": {
+            "targets": [
+                {
+                    "tags": [],
+                    "match_keys": [],
+                    "match_indices_jsons": [],
+                    "id": "1457",
+                    "created_at": 1743482897,
+                    "uid": "NNIgZ78hR3hqcpGv76jepCcOijz2",
+                    "is_public": true,
+                    "duplicated_from_id": null,
+                    "ownership": "leerlevels",
+                    "label": "Gelijktijdigheid op ruimtetijddiagram",
+                    "description": "Je kan uitleggen hoe gelijktijdigheid is gedefinieerd op een ruimtetijddiagram (Minkowski diagram)",
+                    "slide_explanation": "Een gedachtenexperiment illustreert gelijktijdigheidslijnen in speciale relativiteit via de Lorentz-transformatie. Twee stilstaande waarnemers, A en B, staan op afstand $d$. Hun wereldlijnen zijn verticaal in het ruimtetijddiagram. A stuurt een laserstraal naar B, die de straal terugkaatst. De gelijktijdigheidslijn verbindt de gebeurtenissen van verzenden en ontvangen met het weerkaatsmoment en is horizontaal als A en B stilstaan. Bij beweging naar rechts met snelheid $v$ lopen de wereldlijnen schuin. De gelijktijdigheidslijn helt nu, afhankelijk van $v$. Dit toont aan dat gelijktijdigheid relatief is en Lorentz-transformaties vereist zijn bij hoge snelheden, in tegenstelling tot Galilei-transformaties.",
+                    "target_explanation": "Met een gedachtenexperiment kun je bepalen hoe gelijktijdigheidslijnen eruitzien volgens de speciale relativiteit, met behulp van de Lorentz-transformatie. Stel je hebt twee stilstaande waarnemers, A en B, die op een afstand $d$ van elkaar staan. In hun ruimtetijddiagram zijn de wereldlijnen verticaal, omdat ze niet bewegen. De wereldlijn van waarnemer A loopt recht omhoog door de oorsprong, terwijl die van waarnemer B ook verticaal is, maar begint op een afstand $d$ naar rechts van A, dus op $x = d$.\n\nWe kunnen gelijktijdigheid vaststellen met een eenvoudig gedachtenexperiment. Waarnemer B houdt een spiegel vast. Waarnemer A stuurt een laserstraal naar B. Wanneer het licht de spiegel raakt, is dat een gebeurtenis op de wereldlijn van B. De straal kaatst terug en bereikt weer A. Volgens de speciale relativiteit vindt het moment van terugkaatsen gelijktijdig plaats met het tijdstip dat precies halverwege ligt tussen het verzenden en ontvangen van het licht. Als we deze twee gebeurtenissen met elkaar verbinden in het diagram, krijgen we een lijn van gelijktijdigheid. Zolang A en B stilstaan, is die lijn horizontaal.\n\nMaar wat gebeurt er als A en B bewegen? Stel dat ze beide met een constante snelheid $v$ naar rechts bewegen. De wereldlijn van A loopt dan schuin omhoog, met de vergelijking $x_A = v \\cdot t$. De wereldlijn van B loopt ook schuin omhoog, maar begint op afstand $d$, dus $x_B = v \\cdot t + d$. We herhalen het gedachtenexperiment: A stuurt een laserstraal naar de spiegel van B. Het licht wordt weerkaatst en komt terug bij A. Het tijdstip halverwege verzenden en ontvangen is opnieuw gelijktijdig met het terugkaatsen van de straal bij B. Als we die twee gebeurtenissen verbinden, ontstaat de gelijktijdigheidslijn in dit bewegende stelsel. Deze lijn is nu niet meer horizontaal maar helt onder een hoek ten opzichte van de plaats-as. Deze hoek hangt af van de snelheid $v$.\n\nKortom, in een stilstaand stelsel zijn gelijktijdigheidslijnen horizontaal, maar in een bewegend stelsel hellen ze schuin. Dit laat zien dat gelijktijdigheid relatief is en dat we bij hoge snelheden de Lorentz-transformaties nodig hebben, in plaats van de klassieke Galilei-transformaties.",
+                    "topic": [
+                        "physics"
+                    ],
+                    "domain": [
+                        "special_relativity"
+                    ],
+                    "subdomain": [],
+                    "status": "new",
+                    "num_stars": 0,
+                    "has_leerlevels_version": false
+                },
+                {
+                    "tags": [],
+                    "match_keys": [],
+                    "match_indices_jsons": [],
+                    "id": "1456",
+                    "created_at": 1743482843,
+                    "uid": "NNIgZ78hR3hqcpGv76jepCcOijz2",
+                    "is_public": true,
+                    "duplicated_from_id": null,
+                    "ownership": "leerlevels",
+                    "label": "Galilei-transformatie bij hoge snelheid",
+                    "description": "Je kan uitleggen waarom Galilei-transformatie niet gelden bij hoge snelheden met ruimtetijddiagram",
+                    "slide_explanation": "Galilei-transformaties veronderstellen een absolute tijd, wat leidt tot fouten bij hoge snelheden, zoals blijkt uit de speciale relativiteitstheorie. Een stilstaande waarnemer ziet een raket met een kwart van de lichtsnelheid. Vanuit de raket gezien is de wereldlijn verticaal. Het licht vormt een lijn van 45 graden in een ruimtetijddiagram. Galilei-transformaties maken dat het licht sneller dan de lichtsnelheid lijkt te bewegen, bijvoorbeeld $1{,}25$ keer $c$, wat fysisch onmogelijk is. Daarom vervangen Lorentz-transformaties deze binnen de speciale relativiteit, omdat ze de constante lichtsnelheid respecteren voor alle waarnemers in een inertiaalstelsel.",
+                    "target_explanation": "Wanneer we Galilei-transformaties toepassen, veronderstellen we dat de tijd voor alle waarnemers hetzelfde is. Bij hoge snelheden blijkt deze aanname echter niet te kloppen, waardoor Galilei-transformaties ongeschikt zijn binnen de speciale relativiteitstheorie. Stel je een stilstaande waarnemer voor die naar een raket kijkt die beweegt met een snelheid van een kwart van de lichtsnelheid. Terwijl de raket beweegt, zendt hij een laserstraal uit. Vanuit het perspectief van de raket is de wereldlijn van de raket verticaal in het ruimtetijddiagram en gaat hij door de oorsprong. De wereldlijn van het licht vormt een rechte lijn onder een hoek van 45 graden. Dit is het geval wanneer de tijdas geschaald is met de lichtsnelheid. Dit houdt in dat geen enkele wereldlijn vanuit de oorsprong onder die van het licht kan liggen, omdat dat zou betekenen dat een object sneller dan het licht beweegt, wat fysisch onmogelijk is.\n\nVanuit het perspectief van de raket lijkt het alsof de stilstaande waarnemer naar links beweegt met een kwart van de lichtsnelheid. Tot zover klopt alles. Als we echter dezelfde beweging willen bekijken vanuit het perspectief van de stilstaande waarnemer, passen we een Galilei-transformatie toe. Hierbij verschuiven we de wereldlijnen van de raket, de waarnemer en het licht. Wat we dan zien, is dat de wereldlijn van het licht niet langer onder een hoek van 45 graden loopt, maar onder een kleinere hoek. Dit impliceert dat het licht vanuit dit perspectief beweegt met een snelheid die groter is dan de lichtsnelheid, bijvoorbeeld $1{,}25$ keer de lichtsnelheid. Volgens de speciale relativiteit mag dat niet, omdat alle waarnemers in een inertiaalstelsel de lichtsnelheid $c$ moeten meten, ongeacht hun eigen snelheid.\n\nKortom, Galilei-transformaties veronderstellen een absolute tijd, wat tot foutieve resultaten leidt bij hoge snelheden. Daarom worden ze in de speciale relativiteitstheorie vervangen door de Lorentz-transformaties.",
+                    "topic": [
+                        "physics"
+                    ],
+                    "domain": [
+                        "special_relativity"
+                    ],
+                    "subdomain": [],
+                    "status": "new",
+                    
+                    "num_stars": 0,
+                    "has_leerlevels_version": false
+                }
+            ]
+        }
+    }
+}
