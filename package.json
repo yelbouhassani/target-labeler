@@ -1,0 +1,29 @@
+{
+  "name": "target-labeler",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yelbouhassani/target-labeler.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/yelbouhassani/target-labeler/issues"
+  },
+  "homepage": "https://github.com/yelbouhassani/target-labeler#readme",
+  "description": "",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "dotenv": "^17.0.1",
+    "express": "^5.1.0",
+    "jsonstream": "^1.0.3",
+    "langfuse": "^3.38.2",
+    "langfuse-langchain": "^3.38.2",
+    "nodemon": "^3.1.10"
+  }
+}

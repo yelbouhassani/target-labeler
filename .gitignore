@@ -1,2 +1,3 @@
 .env
-all-targets.json
+all_targets.json
+labeled_targets.json
