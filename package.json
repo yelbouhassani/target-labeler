@@ -24,6 +24,7 @@
     "jsonstream": "^1.0.3",
     "langfuse": "^3.38.2",
     "langfuse-langchain": "^3.38.2",
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.10",
+    "p-limit": "^6.2.0"
   }
 }
