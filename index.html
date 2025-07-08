@@ -11,7 +11,7 @@
             margin: 20px;
             background-color: #fdfdfd;
             color: #333;
-            font-size: 14px; /* Smaller base font size */
+            font-size: 14px;
         }
         h1 {
             text-align: center;
@@ -24,31 +24,57 @@
             box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
         }
         thead {
-            background-color: #444; /* Dark grey header */
+            background-color: #444;
             color: #fdfdfd;
         }
         th, td {
-            padding: 8px 12px; /* Reduced padding */
+            padding: 8px 12px;
             border: 1px solid #ddd;
             text-align: left;
             vertical-align: middle;
         }
+        /* Style for sortable headers */
+        th[data-sort-key] {
+            cursor: pointer;
+            position: relative;
+        }
+        th[data-sort-key]:hover {
+            background-color: #555;
+        }
+        /* Arrows for sorting indication */
+        th[data-sort-key]::after {
+            content: '';
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            margin-top: -8px;
+            border: 4px solid transparent;
+            opacity: 0.3;
+        }
+        th[data-sort-key].asc::after {
+            border-bottom-color: #fdfdfd;
+            opacity: 1;
+        }
+        th[data-sort-key].desc::after {
+            border-top-color: #fdfdfd;
+            opacity: 1;
+        }
         tr:nth-child(even) {
-            background-color: #f5f5f5; /* Light grey for even rows */
+            background-color: #f5f5f5;
         }
         tr:hover {
-            background-color: #e9e9e9; /* Slightly darker grey on hover */
+            background-color: #e9e9e9;
         }
         td img {
-            max-width: 80px; /* Smaller thumbnail */
+            max-width: 80px;
             height: auto;
             display: block;
             border-radius: 4px;
-            cursor: pointer; /* Add pointer cursor to indicate it's clickable */
+            cursor: pointer;
             transition: transform 0.2s;
         }
         td img:hover {
-            transform: scale(1.1); /* Slight zoom on hover */
+            transform: scale(1.1);
         }
         #searchInput {
             width: 100%;
@@ -62,16 +88,16 @@
         
         /* Styles for the Image Modal */
         .modal {
-            display: none; /* Hidden by default */
-            position: fixed; /* Stay in place */
-            z-index: 1000; /* Sit on top */
+            display: none;
+            position: fixed;
+            z-index: 1000;
             padding-top: 50px;
             left: 0;
             top: 0;
             width: 100%;
             height: 100%;
-            overflow: auto; /* Enable scroll if needed */
-            background-color: rgba(0,0,0,0.9); /* Black w/ opacity */
+            overflow: auto;
+            background-color: rgba(0,0,0,0.9);
         }
         .modal-content {
             margin: auto;
@@ -105,15 +131,15 @@
     <table>
         <thead>
             <tr>
-                <th>Target_ID</th>
-                <th>Label</th>
-                <th>Description</th>
+                <th data-sort-key="Target_ID">Target_ID</th>
+                <th data-sort-key="Label">Label</th>
+                <th data-sort-key="Description">Description</th>
                 <th>Image</th>
-                <th>Subject</th>
-                <th>Topic</th>
-                <th>Correct Topic.</th>
-                <th>Category</th>
+                <th data-sort-key="Subject">Subject</th>
+                <th data-sort-key="Category">Category</th>
                 <th>Correct Cat.</th>
+                <th data-sort-key="Topic">Topic</th>
+                <th>Correct Topic.</th>
             </tr>
         </thead>
         <tbody id="target-table-body">
@@ -130,6 +156,30 @@
 
     <script>
         let allTargets = [];
+        let currentSort = { key: 'Target_ID', direction: 'asc' }; // Default sort
+
+        function sortData(data, key, direction) {
+            return [...data].sort((a, b) => {
+                let valA = a[key];
+                let valB = b[key];
+                
+                if (Array.isArray(valA)) valA = valA.join(', ');
+                if (Array.isArray(valB)) valB = valB.join(', ');
+
+                valA = valA || '';
+                valB = valB || '';
+                
+                if (key === 'Target_ID') {
+                    return direction === 'asc' ? 
+                           parseInt(valA) - parseInt(valB) : 
+                           parseInt(valB) - parseInt(valA);
+                }
+
+                const comparison = valA.localeCompare(valB, undefined, { sensitivity: 'base' });
+                
+                return direction === 'asc' ? comparison : -comparison;
+            });
+        }
 
         function displayTargets(targets) {
             const tableBody = document.getElementById('target-table-body');
@@ -138,7 +188,7 @@
             if (targets.length === 0) {
                 const row = tableBody.insertRow();
                 const cell = row.insertCell();
-                cell.colSpan = 9; // Updated colspan to 9
+                cell.colSpan = 9;
                 cell.textContent = 'No targets found.';
                 cell.style.textAlign = 'center';
                 return;
@@ -149,117 +199,110 @@
 
             targets.forEach(target => {
                 const row = tableBody.insertRow();
-
-                // 1. Target_ID
+                // --- Columns 1-4 ---
                 row.insertCell().textContent = target.Target_ID;
-
-                // 2. Label
                 row.insertCell().textContent = target.Label;
-
-                // 3. Description
                 row.insertCell().textContent = target.Description;
-
-                // 4. Image
+                
                 const cellImage = row.insertCell();
                 const image = document.createElement('img');
                 image.src = `https://firebasestorage.googleapis.com/v0/b/leerlevels-data-server.appspot.com/o/targets%2F${target.Target_ID}%2Fm.png?alt=media`;
                 image.alt = `Image for ${target.Label}`;
                 image.onerror = () => { image.style.display = 'none'; cellImage.textContent = 'No Image'; };
-                
                 image.onclick = function() {
                     modal.style.display = "block";
                     modalImg.src = this.src;
                 }
                 cellImage.appendChild(image);
-
-                // 5. Subject (NEW)
-                const cellSubject = row.insertCell();
-                cellSubject.textContent = Array.isArray(target.Subject) ? target.Subject.join(', ') : (target.Subject || '');
                 
-                // 6. Topic
-                const cellTopic = row.insertCell();
-                cellTopic.textContent = Array.isArray(target.Topic) ? target.Topic.join(', ') : (target.Topic || '');
-
-                // 7. "Correct Topic." Checkbox
-                const cellCorrectTopic = row.insertCell();
-                const checkboxTopic = document.createElement('input');
-                checkboxTopic.type = 'checkbox';
-                checkboxTopic.checked = true;
-                cellCorrectTopic.style.textAlign = 'center';
-                cellCorrectTopic.appendChild(checkboxTopic);
+                // --- Column 5 ---
+                row.insertCell().textContent = Array.isArray(target.Subject) ? target.Subject.join(', ') : (target.Subject || '');
                 
-                // 8. Category
-                const cellCategory = row.insertCell();
-                cellCategory.textContent = Array.isArray(target.Category) ? target.Category.join(', ') : (target.Category || '');
-
-                // 9. "Correct Cat." Checkbox
+                // --- Columns 6 & 7: Category and its checkbox ---
+                row.insertCell().textContent = Array.isArray(target.Category) ? target.Category.join(', ') : (target.Category || '');
                 const cellCorrectCat = row.insertCell();
                 const checkboxCat = document.createElement('input');
                 checkboxCat.type = 'checkbox';
                 checkboxCat.checked = true;
                 cellCorrectCat.style.textAlign = 'center';
                 cellCorrectCat.appendChild(checkboxCat);
+
+                // --- Columns 8 & 9: Topic and its checkbox ---
+                row.insertCell().textContent = Array.isArray(target.Topic) ? target.Topic.join(', ') : (target.Topic || '');
+                const cellCorrectTopic = row.insertCell();
+                const checkboxTopic = document.createElement('input');
+                checkboxTopic.type = 'checkbox';
+                checkboxTopic.checked = true;
+                cellCorrectTopic.style.textAlign = 'center';
+                cellCorrectTopic.appendChild(checkboxTopic);
             });
         }
         
-        function filterTargets() {
+        function updateTable() {
             const searchInput = document.getElementById('searchInput');
             const searchTerm = searchInput.value.toLowerCase();
 
             const filteredTargets = allTargets.filter(target => {
-                // Ensure values are strings and lowercase before searching
                 const label = (target.Label || '').toLowerCase();
                 const description = (target.Description || '').toLowerCase();
                 const subject = (Array.isArray(target.Subject) ? target.Subject.join(', ') : (target.Subject || '')).toLowerCase();
                 const topic = (Array.isArray(target.Topic) ? target.Topic.join(', ') : (target.Topic || '')).toLowerCase();
                 const category = (Array.isArray(target.Category) ? target.Category.join(', ') : (target.Category || '')).toLowerCase();
-
-                return label.includes(searchTerm) ||
-                       description.includes(searchTerm) ||
-                       subject.includes(searchTerm) || // Added to search
-                       topic.includes(searchTerm) ||
-                       category.includes(searchTerm);
+                return label.includes(searchTerm) || description.includes(searchTerm) || subject.includes(searchTerm) || topic.includes(searchTerm) || category.includes(searchTerm);
             });
-            
-            displayTargets(filteredTargets);
+
+            const sortedTargets = sortData(filteredTargets, currentSort.key, currentSort.direction);
+            displayTargets(sortedTargets);
         }
 
         document.addEventListener('DOMContentLoaded', () => {
             fetch('labeled_targets.json')
                 .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                     return response.json();
                 })
                 .then(data => {
                     allTargets = data;
-                    displayTargets(allTargets);
+                    updateTable();
                 })
                 .catch(error => {
                     console.error('Error fetching or parsing JSON:', error);
                     const tableBody = document.getElementById('target-table-body');
-                    // Updated colspan to 9
                     tableBody.innerHTML = `<tr><td colspan="9" style="color: red; text-align: center;">Failed to load data. Please check if 'labeled_targets.json' exists and is in the same directory.</td></tr>`;
                 });
             
             const searchInput = document.getElementById('searchInput');
-            searchInput.addEventListener('input', filterTargets);
+            searchInput.addEventListener('input', updateTable);
+
+            document.querySelectorAll('th[data-sort-key]').forEach(header => {
+                header.addEventListener('click', () => {
+                    const key = header.dataset.sortKey;
+                    
+                    if (currentSort.key === key) {
+                        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        currentSort.key = key;
+                        currentSort.direction = 'asc';
+                    }
+
+                    document.querySelectorAll('th[data-sort-key]').forEach(th => th.classList.remove('asc', 'desc'));
+                    header.classList.add(currentSort.direction);
+                    
+                    updateTable();
+                });
+            });
+            
+            document.querySelector(`th[data-sort-key="${currentSort.key}"]`).classList.add(currentSort.direction);
 
             const modal = document.getElementById('imageModal');
             const closeButton = document.querySelector('.close-button');
-            
-            closeButton.onclick = function() {
-                modal.style.display = "none";
-            }
-            
-            window.onclick = function(event) {
+            closeButton.onclick = () => { modal.style.display = "none"; };
+            window.onclick = (event) => {
                 if (event.target == modal) {
                     modal.style.display = "none";
                 }
-            }
+            };
         });
-
     </script>
 
 </body>
