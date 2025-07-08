@@ -110,7 +110,7 @@ app.post('/label-targets', async (req, res) => {
                             const jsonString = jsonMatch[0];
                             const llmResponse = JSON.parse(jsonString);
                             trace.update({ input: promptInput, output: llmResponse });
-                            return { ...simplifiedTarget, Category: llmResponse.Category || [], Topic: llmResponse.Topic || [] };
+                            return { ...simplifiedTarget, Topic: llmResponse.Topic || [], Category: llmResponse.Category || [] };
                         } catch (error) {
                             console.error(`--- ERROR PROCESSING TARGET ID: ${simplifiedTarget.Target_ID} ---`);
                             console.error(`Error Message: ${error.message}`);
