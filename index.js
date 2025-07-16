@@ -1,4 +1,4 @@
-// index.js (Final Version with Configurable Concurrency)
+// index.js (Complete, self-contained version for semantic matching)
 
 const express = require('express');
 const fs = require('fs');
@@ -11,42 +11,69 @@ require('dotenv').config();
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const OpenAI = require("openai");
 
+// --- Configuration ---
 const app = express();
 app.use(express.json());
+
 const PORT = process.env.PORT || 3000;
 const INPUT_FILE_TARGETS = 'all_targets.json';
 const INPUT_FILE_LABELS = 'labels.csv';
 const OUTPUT_FILE = 'labeled_targets.json';
 const PROMPT_NAME = 'target-labeler';
 
+// --- Initialize Clients ---
 const langfuse = new Langfuse();
 const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
 if (openai) console.log("OpenAI client initialized.");
 const googleGenAI = process.env.GOOGLE_API_KEY ? new GoogleGenerativeAI(process.env.GOOGLE_API_KEY) : null;
 if (googleGenAI) console.log("Google GenAI client initialized.");
 
+
 // --- Helper Functions ---
-async function loadAndMapLabels() {
+
+/**
+ * Reads labels.csv, creates a lookup map (Topic -> {Subject, Category}),
+ * and a structured list of topics with their terms for the LLM.
+ * It can now filter which topics are included based on their subject.
+ */
+async function loadAndMapLabels(labelFilterSubjects = []) {
     return new Promise((resolve, reject) => {
         const topicMap = new Map();
-        const topicList = [];
+        const topicsForLLM = [];
+        const lowerCaseFilter = labelFilterSubjects.map(s => s.toLowerCase());
+
         fs.createReadStream(path.join(__dirname, INPUT_FILE_LABELS)).pipe(csv())
             .on('data', (row) => {
+                // The full topicMap is always created for reliable lookup later.
                 topicMap.set(row.Topic, { subject: row.Subject, category: row.Category });
-                topicList.push(row.Topic);
+
+                const shouldInclude = lowerCaseFilter.length === 0 || lowerCaseFilter.includes(row.Subject.toLowerCase());
+                if (shouldInclude) {
+                    // Create a structured object for the LLM prompt
+                    topicsForLLM.push({
+                        Topic: row.Topic,
+                        Terms: row.Terms || "" // Ensure Terms is at least an empty string
+                    });
+                }
             })
             .on('end', () => {
-                const availableTopicsString = topicList.join(', ');
-                resolve({ topicMap, availableTopicsString });
+                const topicsWithTermsJsonString = JSON.stringify(topicsForLLM, null, 2);
+                console.log(`Providing ${topicsForLLM.length} topics (with terms) to the LLM based on the filter.`);
+                resolve({ topicMap, topicsWithTermsJsonString });
             })
             .on('error', reject);
     });
 }
+
+/**
+ * Makes a direct API call to the OpenAI API, sanitizing parameters.
+ */
 async function callOpenAI(trace, promptMessages, model, modelParameters) {
     if (!openai) throw new Error("OpenAI client not initialized.");
-    const generation = trace.generation({ name: 'openai-direct-call', input: promptMessages, model, modelParameters });
+    const { generationConfig, ...openAIParams } = modelParameters; // Sanitize params
+    const generation = trace.generation({ name: 'openai-direct-call', input: promptMessages, model, modelParameters: openAIParams });
     try {
-        const completion = await openai.chat.completions.create({ model, messages: promptMessages, ...modelParameters });
+        const completion = await openai.chat.completions.create({ model, messages: promptMessages, ...openAIParams });
         const output = completion.choices[0].message.content;
         generation.end({ output });
         return output;
@@ -55,6 +82,10 @@ async function callOpenAI(trace, promptMessages, model, modelParameters) {
         throw error;
     }
 }
+
+/**
+ * Makes a direct API call to the Google GenAI API, normalizing parameters.
+ */
 async function callGoogle(trace, promptString, model, modelParameters) {
     if (!googleGenAI) throw new Error("Google client not initialized.");
     const googleModel = googleGenAI.getGenerativeModel({ model });
@@ -70,6 +101,10 @@ async function callGoogle(trace, promptString, model, modelParameters) {
         throw error;
     }
 }
+
+/**
+ * Corrects the structure of Google's model parameters to ensure reliability.
+ */
 function normalizeGoogleParams(params) {
     if (!params) return {};
     const normalized = { generationConfig: { ...(params.generationConfig || {}) } };
@@ -77,6 +112,9 @@ function normalizeGoogleParams(params) {
         if (Object.prototype.hasOwnProperty.call(params, key) && key !== 'generationConfig') {
             normalized.generationConfig[key] = params[key];
         }
+    }
+    if (!normalized.generationConfig.response_mime_type) {
+        normalized.generationConfig.response_mime_type = "application/json";
     }
     return normalized;
 }
@@ -86,18 +124,30 @@ function normalizeGoogleParams(params) {
 app.post('/label-targets', async (req, res) => {
     const startTime = Date.now();
     let modelName;
-    const filterTopics = req.body.Topic || [];
-    console.log(filterTopics.length > 0 ? `Request received. Filtering for topics: [${filterTopics.join(', ')}]` : "Request received. No topic filter applied.");
-
     try {
-        // --- NEW: Read the concurrency limit from the .env file ---
-        const concurrency = parseInt(process.env.CONCURRENCY_LIMIT) || 15; // Default to 15 if not set
-        console.log(`Using concurrency limit: ${concurrency}`);
+        const filterSubjects = req.body.Subject || [];
+        const filterTargetIDs = new Set(req.body.Target_IDs || []);
+        const labelFilterSubjects = req.body.Use_labels || [];
+
+        if (filterSubjects.length > 0) {
+            console.log(`Request received. Filtering targets to process from subjects: [${filterSubjects.join(', ')}]`);
+        }
+        if (labelFilterSubjects.length > 0) {
+            console.log(`Request received. Filtering available labels to use from subjects: [${labelFilterSubjects.join(', ')}]`);
+        }
+        if (filterTargetIDs.size > 0) {
+            console.log(`Request received. Filtering for ${filterTargetIDs.size} specific Target_IDs.`);
+        }
+        if (filterSubjects.length === 0 && filterTargetIDs.size === 0) {
+            console.log("Request received. No target filters applied, processing all targets.");
+        }
 
         const pLimit = (await import('p-limit')).default;
+        const concurrency = parseInt(process.env.CONCURRENCY_LIMIT) || 15;
         const limit = pLimit(concurrency);
+        console.log(`Using concurrency limit: ${concurrency}`);
 
-        const { topicMap, availableTopicsJsonArrayString } = await loadAndMapLabels();
+        const { topicMap, topicsWithTermsJsonString } = await loadAndMapLabels(labelFilterSubjects);
         const promptTemplate = await langfuse.getPrompt(PROMPT_NAME);
         const provider = promptTemplate.config.provider;
         modelName = promptTemplate.config.model || promptTemplate.config.modelName;
@@ -112,10 +162,12 @@ app.post('/label-targets', async (req, res) => {
 
             parser.on('data', (target) => {
                 targetCount++;
-                const hasMatchingTopic = filterTopics.length === 0 || target.topic?.some(t => filterTopics.includes(t));
-                if (hasMatchingTopic) {
+                let hasMatchingSubject = filterSubjects.length === 0 || (target.subject && (Array.isArray(target.subject) ? target.subject.some(s => filterSubjects.includes(s)) : filterSubjects.includes(target.subject)));
+                const hasMatchingID = filterTargetIDs.size === 0 || filterTargetIDs.has(target.id);
+                const shouldProcess = hasMatchingSubject && hasMatchingID;
+
+                if (shouldProcess) {
                     processedCount++;
-                    // Wrap the async operation in the configured limiter
                     const labelingPromise = limit(async () => {
                         const simplifiedTarget = { Target_ID: target.id, Label: target.label, Description: target.description, Explanation: target.target_explanation };
                         const experimentalText = "---*Deze uitleg is experimenteel en wordt nog verder verbeterd.*";
@@ -130,7 +182,7 @@ app.post('/label-targets', async (req, res) => {
                                 label: simplifiedTarget.Label,
                                 description: simplifiedTarget.Description,
                                 explanation: simplifiedTarget.Explanation,
-                                available_topics_json_array: availableTopicsJsonArrayString
+                                topics_with_terms_json: topicsWithTermsJsonString
                             };
                             const compiledPrompt = promptTemplate.compile(promptInput);
 
@@ -148,7 +200,10 @@ app.post('/label-targets', async (req, res) => {
                             const jsonString = jsonMatch[0];
                             const llmResponse = JSON.parse(jsonString);
                             
-                            const llmTopics = llmResponse.Topics || llmResponse.Topic || [];
+                            const rankedTopics = llmResponse.RankedTopics || [];
+                            const llmTopics = rankedTopics.map(item => item.Topic);
+                            const topConfidence = rankedTopics.length > 0 ? rankedTopics[0].Confidence : 0;
+
                             const subjects = new Set();
                             const categories = new Set();
 
@@ -162,19 +217,20 @@ app.post('/label-targets', async (req, res) => {
                                 }
                             });
 
-                            trace.update({ input: promptInput, output: { ...llmResponse, derivedSubjects: Array.from(subjects), derivedCategories: Array.from(categories) } });
+                            trace.update({ input: promptInput, output: llmResponse });
 
                             return { 
                                 ...simplifiedTarget, 
                                 Subject: Array.from(subjects),
                                 Category: Array.from(categories),
-                                Topic: llmTopics 
+                                Topic: llmTopics,
+                                Confidence: topConfidence
                             };
                         } catch (error) {
                             console.error(`--- ERROR PROCESSING TARGET ID: ${simplifiedTarget.Target_ID} ---`);
                             console.error(`Error Message: ${error.message}`);
                             trace.update({ level: 'ERROR', statusMessage: error.message });
-                            return { ...simplifiedTarget, Subject: ['Error processing'], Category: ['Error processing'], Topic: ['Error processing'] };
+                            return { ...simplifiedTarget, Subject: ['Error processing'], Category: ['Error processing'], Topic: ['Error processing'], Confidence: -1 };
                         }
                     });
                     labelingPromises.push(labelingPromise);
